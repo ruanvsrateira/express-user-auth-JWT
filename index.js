@@ -2,21 +2,15 @@ const express = require('express');
 const app = express();
 const path = require('path');
 const session = require('express-session');
-const port = 3003;
+const port = 3333;
 const router = express.Router();
 const mongoose = require('mongoose');
 const database = require('./src/models/UserModel');
-const jwt = require('jsonwebtoken');
 const UserModel = require('./src/models/UserModel');
 const secret = require('./src/config/jwtsecret.json').secret;
+const verifyMiddleware = require('./src/middlewares/verifyToken');
+const jwt = require('jsonwebtoken');
 
-async function verifyToken(req, res, next) {
-    const token = req.session.token;
-    jwt.verify(token, secret, (err, decoded) => {
-        if(err) return console.log(`Erro: ${err}`);
-        next();
-    });
-}
 
 mongoose.connect("mongodb+srv://ruanvsrateira:Senac123@cluster0.ragks.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
     .then(() => {
@@ -54,11 +48,17 @@ router.post('/login', async function(req, res) {
     }
 });
 
-router.get('/home', verifyToken, async function(req, res)  {
+router.get('/home', verifyMiddleware.verifyToken, async function(req, res)  {
 
     res.render('home', { user: req.session.user_data }
     
 )});
+
+router.get('/sair', (req, res) => {
+    req.session.destroy();
+
+    res.redirect('/login');
+});
 
 
 app.on('databaseon', () => {
